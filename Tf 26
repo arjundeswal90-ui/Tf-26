@@ -1,0 +1,155 @@
+-- TF26 Dynamic Ball Hitbox Expander GUI (Blue Highlight)
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+
+-- Configuration
+local HitboxEnabled = false
+local HitboxSize = 10
+local ActiveBall = nil
+local OriginalSize = Vector3.new(2, 2, 2)
+
+-- Create GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TF26HitboxGui"
+ScreenGui.Parent = CoreGui or Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+MainFrame.Position = UDim2.new(0.05, 0, 0.4, 0)
+MainFrame.Size = UDim2.new(0, 220, 0, 160)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel")
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 32)
+Title.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+Title.Text = "TF26 Ball Hitbox"
+Title.Font = Enum.Font.SourceSansBold
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Parent = MainFrame
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.28, 0)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0, 32)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+ToggleBtn.Text = "Hitbox: OFF"
+ToggleBtn.Font = Enum.Font.SourceSansBold
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 15
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 6)
+
+local SizeLabel = Instance.new("TextLabel")
+SizeLabel.Parent = MainFrame
+SizeLabel.Position = UDim2.new(0.1, 0, 0.55, 0)
+SizeLabel.Size = UDim2.new(0.8, 0, 0, 20)
+SizeLabel.BackgroundTransparency = 1
+SizeLabel.Text = "Hitbox Size: " .. tostring(HitboxSize)
+SizeLabel.Font = Enum.Font.SourceSans
+SizeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SizeLabel.TextSize = 14
+
+local MinusBtn = Instance.new("TextButton")
+MinusBtn.Parent = MainFrame
+MinusBtn.Position = UDim2.new(0.1, 0, 0.72, 0)
+MinusBtn.Size = UDim2.new(0.35, 0, 0, 28)
+MinusBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+MinusBtn.Text = "-"
+MinusBtn.Font = Enum.Font.SourceSansBold
+MinusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinusBtn.TextSize = 18
+Instance.new("UICorner", MinusBtn).CornerRadius = UDim.new(0, 6)
+
+local PlusBtn = Instance.new("TextButton")
+PlusBtn.Parent = MainFrame
+PlusBtn.Position = UDim2.new(0.55, 0, 0.72, 0)
+PlusBtn.Size = UDim2.new(0.35, 0, 0, 28)
+PlusBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+PlusBtn.Text = "+"
+PlusBtn.Font = Enum.Font.SourceSansBold
+PlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlusBtn.TextSize = 18
+Instance.new("UICorner", PlusBtn).CornerRadius = UDim.new(0, 6)
+
+-- TF26 Deep Ball Finder
+local function findTF26Ball()
+	for _, obj in pairs(Workspace:GetDescendants()) do
+		if obj:IsA("BasePart") or obj:IsA("MeshPart") then
+			local name = obj.Name:lower()
+			if name == "ball" or name == "football" or name == "soccerball" or name == "tp" or obj:FindFirstChild("BallScript") or obj:FindFirstChild("TouchInterest") then
+				if not obj:IsDescendantOf(Players) then
+					return obj
+				end
+			end
+		end
+	end
+	return nil
+end
+
+-- Highlight Manager
+local function applyBlueHighlight(ball)
+	if not ball:FindFirstChild("TF26BlueHighlight") then
+		local hl = Instance.new("Highlight")
+		hl.Name = "TF26BlueHighlight"
+		hl.Adornee = ball
+		hl.FillColor = Color3.fromRGB(0, 140, 255)
+		hl.FillTransparency = 0.5
+		hl.OutlineColor = Color3.fromRGB(0, 230, 255)
+		hl.OutlineTransparency = 0
+		hl.Parent = ball
+	end
+end
+
+local function removeBlueHighlight(ball)
+	if ball and ball:FindFirstChild("TF26BlueHighlight") then
+		ball.TF26BlueHighlight:Destroy()
+	end
+end
+
+-- Realtime Loop
+RunService.Heartbeat:Connect(function()
+	ActiveBall = findTF26Ball()
+	if ActiveBall then
+		if HitboxEnabled then
+			ActiveBall.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+			ActiveBall.CanCollide = false
+			applyBlueHighlight(ActiveBall)
+		else
+			removeBlueHighlight(ActiveBall)
+		end
+	end
+end)
+
+-- UI Interactions
+ToggleBtn.MouseButton1Click:Connect(function()
+	HitboxEnabled = not HitboxEnabled
+	if HitboxEnabled then
+		ToggleBtn.Text = "Hitbox: ON"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+	else
+		ToggleBtn.Text = "Hitbox: OFF"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+		if ActiveBall then
+			removeBlueHighlight(ActiveBall)
+		end
+	end
+end)
+
+PlusBtn.MouseButton1Click:Connect(function()
+	HitboxSize = HitboxSize + 3
+	SizeLabel.Text = "Hitbox Size: " .. tostring(HitboxSize)
+end)
+
+MinusBtn.MouseButton1Click:Connect(function()
+	if HitboxSize > 3 then
+		HitboxSize = HitboxSize - 3
+		SizeLabel.Text = "Hitbox Size: " .. tostring(HitboxSize)
+	end
+end)
